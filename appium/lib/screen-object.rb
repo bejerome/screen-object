@@ -56,6 +56,28 @@ module ScreenObject
     driver.swipe(:start_x => start_x, :start_y => start_y, :end_x => end_x, :end_y => end_y,:touchCount => touch_count,:duration => duration)
   end
 
+  def scroll(direction)
+    sleep 2
+    size = driver.driver.manage.window.size
+    height = size.height
+    width = size.width
+    if direction != :up && direction != :down && direction != :left && direction != :right
+      log_error 'Only upwards and downwards left right scrolling is supported for now'
+    end
+
+    if direction == :up
+      Appium::TouchAction.new($driver).swipe(start_x: (width / 2).to_int, start_y: (height / 4).to_int, end_x: (width / 2).to_int, end_y: (height/2) - 100).perform
+    elsif direction == :down
+      Appium::TouchAction.new($driver).swipe(start_x: (width / 2).to_int, start_y: (height / 4).to_int, end_x: (width / 2).to_int, end_y: 100).perform
+    elsif direction == :left
+      Appium::TouchAction.new($driver).swipe(start_x: (width - 600).to_int, start_y: (height / 2).to_int, end_x: (width/2).to_int, end_y: height / 2).perform
+    elsif direction == :right
+      Appium::TouchAction.new($driver).swipe(start_x: 752, start_y: (height / 2).to_int, end_x: (width - 600).to_int, end_y: height / 2).perform
+    end
+
+
+  end
+
   def landscape
     driver.driver.rotate :landscape
   end
