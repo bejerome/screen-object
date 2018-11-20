@@ -23,11 +23,26 @@ require 'screen-object/accessors'
 require 'screen-object/elements'
 require 'screen-object/screen_factory'
 require 'screen-object/accessors/element'
+require 'screen-object/loggin_helper'
 
 # this module adds screen object when included.
 # This module will add instance methods and screen object that you use to define and interact with mobile objects
 
 module ScreenObject
+
+
+  DEFAULT_OPTS = {
+      :timeout => 60,
+      :retry_frequency => 2,
+      :post_timeout => 1,
+      :timeout_message => 'Timed out waiting...',
+      :screenshot_on_error => false,
+      :error_mesg => "element could not be found"
+
+  } unless const_defined?(:RESET)
+
+  class WaitError < RuntimeError
+  end
 
   def self.included(cls)
     cls.extend ScreenObject::Accessors
@@ -48,14 +63,98 @@ module ScreenObject
   def portrait
     driver.driver.rotate :portrait
   end
-  
+
   def back
     driver.back
   end
 
-  def wait_until(timeout = 5, message = nil, &block)
-    wait = Selenium::WebDriver::Wait.new(timeout: timeout, message: message)
-    wait.until &block
+
+  def wait_poll(opts,&block)
+    test = opts[:until]
+    if test.nil?
+      cond = opts[:until_exists]
+      raise "Must provide :until or :until_exists" unless cond
+
+      test = lambda {"#{cond}?"}
+
+    end
+    wait_for(opts) do
+      if test.call
+        true
+      else
+        yield
+        false
+      end
+    end
+
+  end
+
+
+
+  def wait_for(options_or_timeout=DEFAULT_OPTS, &block)
+    #note Hash is preferred, number acceptable for backwards compat
+    default_timeout = DEFAULT_OPTS[:timeout]
+    timeout = options_or_timeout || default_timeout
+    post_timeout = DEFAULT_OPTS[:post_timeout]
+    retry_frequency = DEFAULT_OPTS[:retry_frequency]
+    timeout_message = DEFAULT_OPTS[:timeout_message]
+    screenshot_on_error = DEFAULT_OPTS[:screenshot_on_error]
+
+    if options_or_timeout.is_a?(Hash)
+      timeout = options_or_timeout[:timeout] || default_timeout
+      retry_frequency = options_or_timeout[:retry_frequency] || retry_frequency
+      post_timeout = options_or_timeout[:post_timeout] || post_timeout
+      timeout_message = options_or_timeout[:timeout_message]
+      if options_or_timeout.key?(:screenshot_on_error)
+        screenshot_on_error = options_or_timeout[:screenshot_on_error]
+      end
+    end
+
+    begin
+      Timeout::timeout(timeout, WaitError) do
+        sleep(retry_frequency) until yield
+      end
+      sleep(post_timeout) if post_timeout > 0
+    rescue WaitError => e
+      msg = timeout_message || e
+      if screenshot_on_error
+        sleep(retry_frequency)
+        return screenshot_and_retry(msg, &block)
+      else
+        raise WaitError(msg)
+      end
+    rescue => e
+      handle_error_with_options(e, nil, screenshot_on_error)
+    end
+  end
+
+  def handle_error_with_options(ex, timeout_message, screenshot_on_error)
+    error_class = (ex && ex.class) || RuntimeError
+    error = error_class.new(timeout_message || ex.message)
+
+    if screenshot_on_error
+      screenshot_and_raise error
+    else
+      log_error(timeout_message || ex.message)
+    end
+  end
+
+  def wait_until_exists(timeout = DEFAULT_OPTS[:timeout], locator)
+    sleep 1
+    wait_for(timeout: timeout,
+             timeout_message: "could not find element") do
+      locator.exists?
+    end
+
+  end
+
+  def wait_until_does_not_exists(timeout = DEFAULT_OPTS[:timeout], locator)
+    sleep 1
+    wait_for(timeout: timeout,
+             timeout_message: "could not find element") do
+      not locator.exists?
+    end
+
   end
 
   def wait_step(timeout = 5, message = nil, &block)
@@ -154,10 +253,10 @@ module ScreenObject
 
   def keyboard_hide
     begin
-    driver.hide_keyboard
+      driver.hide_keyboard
     rescue
       false
     end
   end
-  
+
 end

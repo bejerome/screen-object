@@ -34,7 +34,12 @@ module ScreenObject
         # def click_login_button
         #  login_button # This will click on the button.
         # end
+        #
         define_method(name) do
+          ScreenObject::AppElements::Button.new(locator)
+        end
+
+        define_method("click_on_#{name}") do
           ScreenObject::AppElements::Button.new(locator).tap
         end
 
@@ -251,7 +256,7 @@ module ScreenObject
         # def click_login_button
         #  login_button # This will click on the button.
         # end
-        define_method(name) do
+        define_method("click_on_#{name}") do
           ScreenObject::AppElements::Text.new(locator).tap
         end
 
