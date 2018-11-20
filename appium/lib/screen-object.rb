@@ -23,7 +23,7 @@ require 'screen-object/accessors'
 require 'screen-object/elements'
 require 'screen-object/screen_factory'
 require 'screen-object/accessors/element'
-require 'screen-object/loggin_helper'
+require 'screen-object/logging_helper.rb'
 
 # this module adds screen object when included.
 # This module will add instance methods and screen object that you use to define and interact with mobile objects
@@ -143,7 +143,7 @@ module ScreenObject
         sleep(retry_frequency)
         return screenshot_and_retry(msg, &block)
       else
-        raise WaitError(msg)
+        log_error(msg)
       end
     rescue => e
       handle_error_with_options(e, nil, screenshot_on_error)
