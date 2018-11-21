@@ -23,7 +23,8 @@ require 'screen-object/accessors'
 require 'screen-object/elements'
 require 'screen-object/screen_factory'
 require 'screen-object/accessors/element'
-require 'screen-object/logging_helper.rb'
+require 'screen-object/logging_helper'
+include LoginHelper
 
 # this module adds screen object when included.
 # This module will add instance methods and screen object that you use to define and interact with mobile objects
@@ -56,6 +57,15 @@ module ScreenObject
     driver.swipe(:start_x => start_x, :start_y => start_y, :end_x => end_x, :end_y => end_y,:touchCount => touch_count,:duration => duration)
   end
 
+  def screenshot(opts={:path=> "./screenshots",:file_name=>"fail"})
+    default_path = opts[:path]
+    dir_path = opts || default_path
+    suffix = "_#{Time.now.strftime('%s_%L')}.png"
+    file_full_path = "#{dir_path}/#{opts[:file_name]}#{suffix}"
+    $driver.screenshot(file_full_path)
+    log_debug $driver.get_android_inspect
+  end
+
   def scroll(direction)
     sleep 2
     size = driver.driver.manage.window.size
@@ -75,8 +85,8 @@ module ScreenObject
       Appium::TouchAction.new($driver).swipe(start_x: 752, start_y: (height / 2).to_int, end_x: (width - 600).to_int, end_y: height / 2).perform
     end
 
-
   end
+
 
   def landscape
     driver.driver.rotate :landscape
@@ -177,6 +187,28 @@ module ScreenObject
       not locator.exists?
     end
 
+  end
+
+  def check_elements_exist(*elements_arr)
+    failed_elements =[]
+
+    elements_arr.each do |element|
+
+      ("#{element}?") ? log_info("#{element.locator.join(" ")} is visible") : failed_elements << element.locator.join(" ")
+
+    end
+
+    if failed_elements.size > 0
+
+      error_msg = "\n"
+      failed_elements.each do |err|
+        error_msg = error_msg + err.to_s
+
+      end
+
+      log_error(error_msg)
+
+    end
   end
 
   def wait_step(timeout = 5, message = nil, &block)

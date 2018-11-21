@@ -22,7 +22,7 @@ module ScreenObject
       attr_reader :locator
 
       def initialize(locator)
-        @locator=locator.split("~")
+        @locator=locator.split(":")
       end
 
       def driver
