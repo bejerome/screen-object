@@ -13,7 +13,6 @@ module Android
   module Operations
 
     include Android::DragHelpers
-    include Android::EnvironmentHelpers
     include Android::TextHelpers
     include Android::TouchHelpers
     include Android::WaitHelpers
@@ -41,5 +40,5 @@ module Android
 
   end
 end
-World(Operations)
+
 
