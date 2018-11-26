@@ -17,21 +17,12 @@ module Android
 
       begin
 
-        if ENV['PLATFORM_NAME'].include?('ios')
-
-          $driver.find_element(:name,text)
-          true
-
-        elsif $driver.device_is_android?
-
-          $driver.find_element(:uiautomator, "new UiSelector().text(\"#{text}\")")
-          true
-
-        end
+        $driver.find_element(:uiautomator, "new UiSelector().text(\"#{text}\")")
+        true
 
       rescue Selenium::WebDriver::Error::NoSuchElementError
         false
-        end
+      end
     end
 
     def find_text(text)
@@ -43,7 +34,7 @@ module Android
           $driver.find_element(:name,text)
         else
 
-        $driver.find_element(:uiautomator, "new UiSelector().text(\"#{text}\")")
+          $driver.find_element(:uiautomator, "new UiSelector().text(\"#{text}\")")
         end
       rescue Appium::Core::Wait::TimeoutError => e
         log_error("Could not find text \"#{value}\" on the current screen: #{e}")
@@ -316,21 +307,16 @@ module Android
       "#{(time).strftime("%d %B %Y - %I:%M:%S %p")}  (i.e. #{time})"
     end
 
-    def validate_element_text(locator, expected_text)
+    def validate_element_text(element_text, expected)
+
       begin
-        if expected_text[:marked] || expected_text[:text]
-          expected_value = expected_text.values.first
-        else
-          expected_value = expected_text.strip
-        end
-
-        actual_text = get_text(locator)
+        actual_text = element_text
         find_value = actual_text.gsub(/[[:space:]]+/, ' ').strip
-
+        expected_value = expected
         message = "\n Expected: #{expected_value}  \n Found:    #{find_value}\n"
         (expect(find_value).to eq(expected_value)) ? log_info(message) : log_error(message)
       rescue Selenium::WebDriver::Error::NoSuchElementError => e
-        log_error "Element #{locator} not found on screen"
+        log_error "Element #{expected_value} not found on screen"
       end
 
 
