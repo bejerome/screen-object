@@ -25,7 +25,8 @@ require 'screen-object/screen_factory'
 require 'screen-object/accessors/element'
 require_relative 'screen-object/android_lib/operations'
 include Android::Operations
-
+include RSpec::Expectations
+include RSpec::Matchers
 # this module adds screen object when included.
 # This module will add instance methods and screen object that you use to define and interact with mobile objects
 
