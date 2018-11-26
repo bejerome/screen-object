@@ -24,7 +24,7 @@ require 'screen-object/elements'
 require 'screen-object/screen_factory'
 require 'screen-object/accessors/element'
 require 'screen-object/logging_helper'
-include LoginHelper
+include Operations
 
 # this module adds screen object when included.
 # This module will add instance methods and screen object that you use to define and interact with mobile objects
