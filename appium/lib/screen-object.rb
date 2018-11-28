@@ -24,24 +24,22 @@ require 'screen-object/elements'
 require 'screen-object/screen_factory'
 require 'screen-object/accessors/element'
 require_relative 'screen-object/android_lib/operations'
-include Android::Operations
-include RSpec::Expectations
-include RSpec::Matchers
+
 # this module adds screen object when included.
 # This module will add instance methods and screen object that you use to define and interact with mobile objects
 
 module ScreenObject
+  include Android::Operations
 
-
-  DEFAULT_OPTS = {
-      :timeout => 60,
-      :retry_frequency => 2,
-      :post_timeout => 1,
-      :timeout_message => 'Timed out waiting...',
-      :screenshot_on_error => false,
-      :error_mesg => "element could not be found"
-
-  } unless const_defined?(:RESET)
+  # $appium_timeout = {
+  #     :timeout => 60,
+  #     :retry_frequency => 2,
+  #     :post_timeout => 1,
+  #     :timeout_message => 'Timed out waiting...',
+  #     :screenshot_on_error => false,
+  #     :error_mesg => "element could not be found"
+  #
+  # } unless const_defined?(:RESET)
 
   class WaitError < RuntimeError
   end
@@ -56,15 +54,6 @@ module ScreenObject
 
   def swipe(start_x,start_y,end_x,end_y,touch_count,duration)
     driver.swipe(:start_x => start_x, :start_y => start_y, :end_x => end_x, :end_y => end_y,:touchCount => touch_count,:duration => duration)
-  end
-
-  def screenshot(opts={:path=> "./screenshots",:file_name=>"fail"})
-    default_path = opts[:path]
-    dir_path = opts || default_path
-    suffix = "_#{Time.now.strftime('%s_%L')}.png"
-    file_full_path = "#{dir_path}/#{opts[:file_name]}#{suffix}"
-    $driver.screenshot(file_full_path)
-    log_debug $driver.get_android_inspect
   end
 
   def scroll(direction)
@@ -124,14 +113,14 @@ module ScreenObject
 
 
 
-  def wait_for(options_or_timeout=DEFAULT_OPTS, &block)
+  def wait_for(options_or_timeout=$appium_timeout, &block)
     #note Hash is preferred, number acceptable for backwards compat
-    default_timeout = DEFAULT_OPTS[:timeout]
+    default_timeout = $appium_timeout[:timeout]
     timeout = options_or_timeout || default_timeout
-    post_timeout = DEFAULT_OPTS[:post_timeout]
-    retry_frequency = DEFAULT_OPTS[:retry_frequency]
-    timeout_message = DEFAULT_OPTS[:timeout_message]
-    screenshot_on_error = DEFAULT_OPTS[:screenshot_on_error]
+    post_timeout = $appium_timeout[:post_timeout]
+    retry_frequency = $appium_timeout[:retry_frequency]
+    timeout_message = $appium_timeout[:timeout_message]
+    screenshot_on_error = $appium_timeout[:screenshot_on_error]
 
     if options_or_timeout.is_a?(Hash)
       timeout = options_or_timeout[:timeout] || default_timeout
@@ -172,7 +161,7 @@ module ScreenObject
     end
   end
 
-  def wait_until_exists(timeout = DEFAULT_OPTS[:timeout], locator)
+  def wait_until_exists(timeout = $appium_timeout[:timeout], locator)
     sleep 1
     wait_for(timeout: timeout,
              timeout_message: "could not find element") do
@@ -181,7 +170,7 @@ module ScreenObject
 
   end
 
-  def wait_until_does_not_exists(timeout = DEFAULT_OPTS[:timeout], locator)
+  def wait_until_does_not_exists(timeout = $appium_timeout[:timeout], locator)
     sleep 1
     wait_for(timeout: timeout,
              timeout_message: "could not find element") do

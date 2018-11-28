@@ -4,18 +4,6 @@ module Android
     class WaitError < RuntimeError
     end
 
-
-    DEFAULT_OPTS = {
-        :timeout => ENV['DEFAULT_TIME_OUT'].to_i,
-        :retry_frequency => 2,
-        :post_timeout => 1,
-        :timeout_message => 'Timed out waiting...',
-        :screenshot_on_error => false,
-        :error_mesg => "element could not be found"
-
-    } unless const_defined?(:RESET)
-
-
     def wait_poll(opts,&block)
       test = opts[:until]
       if test.nil?
@@ -38,14 +26,14 @@ module Android
 
 
 
-    def wait_for(options_or_timeout=DEFAULT_OPTS, &block)
+    def wait_for(options_or_timeout=$appium_timeout, &block)
       #note Hash is preferred, number acceptable for backwards compat
-      default_timeout = DEFAULT_OPTS[:timeout]
+      default_timeout = $appium_timeout[:timeout]
       timeout = options_or_timeout || default_timeout
-      post_timeout = DEFAULT_OPTS[:post_timeout]
-      retry_frequency = DEFAULT_OPTS[:retry_frequency]
-      timeout_message = DEFAULT_OPTS[:timeout_message]
-      screenshot_on_error = DEFAULT_OPTS[:screenshot_on_error]
+      post_timeout = $appium_timeout[:post_timeout]
+      retry_frequency = $appium_timeout[:retry_frequency]
+      timeout_message = $appium_timeout[:timeout_message]
+      screenshot_on_error = $appium_timeout[:screenshot_on_error]
 
       if options_or_timeout.is_a?(Hash)
         timeout = options_or_timeout[:timeout] || default_timeout
@@ -118,7 +106,7 @@ module Android
     end
 
 
-    def wait(seconds = DEFAULT_OPTS[:timeout])
+    def wait(seconds = $appium_timeout[:timeout])
       $driver.set_implicit_wait seconds
       yield
       $driver.set_implicit_wait 15
@@ -126,15 +114,15 @@ module Android
 
     #options for wait_for apply
     def wait_for_element_exists(locator)
-        if locator[:marked] || locator[:text]
-          wait_for_text(locator.values.first)
-        else
-          begin
-            $driver.wait_true(DEFAULT_OPTS[:timeout]){element_exists(locator)}
-          rescue RuntimeError => e
-            raise("finds element #{locator}: #{e} for #{DEFAULT_OPTS[:timeout]} seconds")
-          end
+      if locator[:marked] || locator[:text]
+        wait_for_text(locator.values.first)
+      else
+        begin
+          $driver.wait_true($appium_timeout[:timeout]){element_exists(locator)}
+        rescue RuntimeError => e
+          raise("finds element #{locator}: #{e} for #{$appium_timeout[:timeout]} seconds")
         end
+      end
 
     end
 
@@ -144,10 +132,10 @@ module Android
     def wait_for_element_does_not_exist(locator)
       sleep 1
       begin
-        $driver.wait_true(DEFAULT_OPTS[:timeout]){not element_exists(locator)}
+        $driver.wait_true($appium_timeout[:timeout]){not element_exists(locator)}
         true
       rescue RuntimeError => e
-        raise("finds element #{locator}: #{e} for #{DEFAULT_OPTS[:timeout]} seconds")
+        raise("finds element #{locator}: #{e} for #{$appium_timeout[:timeout]} seconds")
       end
     end
 
@@ -170,7 +158,7 @@ module Android
 
     def until_element_exists(uiquery, opts = {})
       sleep 1
-      wait_for(timeout: DEFAULT_OPTS[:timeout],
+      wait_for(timeout: $appium_timeout[:timeout],
                timeout_message: "text #{text} is visible") do
         not element_exists(uiquery)
       end
@@ -180,7 +168,7 @@ module Android
 
     def until_element_does_not_exist(uiquery)
       sleep 1
-      wait_for(timeout: DEFAULT_OPTS[:timeout],
+      wait_for(timeout: $appium_timeout[:timeout],
                timeout_message: "text #{uiquery} is visible") do
         not element_exists(uiquery)
       end
@@ -193,9 +181,9 @@ module Android
     def wait_for_text(text)
 
       sleep 1
-      wait_for(timeout: DEFAULT_OPTS[:timeout],
+      wait_for(timeout: $appium_timeout[:timeout],
                timeout_message: "text #{text} is visible") do
-        has_text?(text)
+        assert_text(text)
       end
       log_debug "#{text} visible"
 
@@ -203,7 +191,7 @@ module Android
 
     def wait_for_contains_text(text)
       begin
-        @driver.complex_find_contains("*","?")
+        $driver.complex_find_contains("*","?")
         log_info "#{text} is visible"
       rescue ElementNotFoundError => e
         log_error("Unable to find #{text}\n error details: #{e} ")
@@ -214,8 +202,7 @@ module Android
       sleep 1
       wait_for(timeout_message: "text #{text} is visible") do
 
-
-        not has_text?(text)
+       lambda {not has_text?(text)}
 
       end
       log_debug "#{text} not visible"

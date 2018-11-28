@@ -1,10 +1,9 @@
-require_relative 'wait_helpers'
+
 require_relative 'locatorhelpers'
 require 'rspec/expectations'
 
 module Android
   module TextHelpers
-    include Android::WaitHelpers
     include Appium::Android::Uiautomator2::Helper
     include LocatorHelpers
     include RSpec::Expectations
@@ -16,11 +15,13 @@ module Android
     def has_text?(text)
 
       begin
-
-        $driver.find_element(:uiautomator, "new UiSelector().text(\"#{text}\")")
+        $driver.complex_find_exact('*',text).displayed?
+        # $driver.find_element(:uiautomator, "new UiSelector().text(\"#{text}\")")
         true
+          # $driver.find_element(:xpath, "//android.widget.TextView[@text='#{text}']").displayed?
 
-      rescue Selenium::WebDriver::Error::NoSuchElementError
+      rescue Selenium::WebDriver::Error::NoSuchElementError => e
+        p e
         false
       end
     end
@@ -97,8 +98,8 @@ module Android
       begin
         element = $driver.find_element(:uiautomator, "new UiSelector().text(\"#{val}\")")
         element.click
-      rescue Appium::Core::Wait::TimeoutError => e
-        log_error("Could not find text \"#{value}\" on the current screen: #{e}")
+      rescue Selenium::WebDriver::Error::NoSuchElementError => e
+        log_error("Could not find text \"#{val}\" on the current screen \nError Descrition: #{e}")
       end
 
     end
@@ -181,7 +182,7 @@ module Android
 
     def escape_newlines(str)
       newline = "\n"
-      str.gsub(newline, "\\n")
+      str.gsub(newline, "\n/")
     end
 
     def escape_quotes(str)
@@ -192,6 +193,13 @@ module Android
       escape_newlines(escape_quotes(escape_backslashes(str)))
     end
 
+    def escape_spec_char(str,char_str)
+      str.gsub("#{char_str}", "#{char_str}\\")
+    end
+    def escape_characters_in_string(string)
+      pattern = /(\'|\"|\.|\*|\/|\-|\\|\)|\$|\+|\(|\^|\?|\!|\~|\`)/
+      string.gsub(pattern){|match|"\\#{match}"}
+    end
     # Sets the selection of the currently focused view.
     #
     # @param [Integer] selection_start The start of the selection, can be

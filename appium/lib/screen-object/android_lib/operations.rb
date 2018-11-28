@@ -21,23 +21,6 @@ module Android
     include Appium::Android::Uiautomator2::Helper
     include Appium::Android::Uiautomator2::Element
 
-    def screenshot_and_raise(e)
-
-      screenshot("FAIL_")
-      log_error e
-
-    end
-
-    def screenshot(file)
-
-      app = GlobalVars.instance
-      suffix = "_#{Time.now.strftime('%s_%L')}.png"
-      file_full_path = "./screenshots/#{file}#{suffix}"
-      $driver.screenshot(file_full_path)
-      app.screenshots << file_full_path
-
-    end
-
   end
 end
 
