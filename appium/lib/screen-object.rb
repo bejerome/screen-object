@@ -165,7 +165,7 @@ module ScreenObject
     sleep 1
     wait_for(timeout: timeout,
              timeout_message: "could not find element") do
-      locator.exists?
+      "#{locator}?"
     end
 
   end
@@ -174,7 +174,7 @@ module ScreenObject
     sleep 1
     wait_for(timeout: timeout,
              timeout_message: "could not find element") do
-      not locator.exists?
+      not "#{locator}?"
     end
 
   end
